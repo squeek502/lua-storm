@@ -41,6 +41,10 @@ if(WIN32)
   target_link_libraries ( luastorm ${LUA_LIBRARIES} )
 endif()
 
+if (NOT WIN32)
+  target_link_libraries ( luastorm stdc++ )
+endif()
+
 # Needed to avoid getting undefined references to liblua
 if(APPLE)
   set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -undefined dynamic_lookup")

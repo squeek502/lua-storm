@@ -1,6 +1,6 @@
 local storm = require('storm')
 
-local mpq = storm.open('Patch_D2.mpq')
+local mpq = assert(storm.open('Patch_D2.mpq'))
 print(mpq)
 
 local filename = 'data\\global\\excel\\MonLvl.txt'

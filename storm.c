@@ -25,6 +25,7 @@ static int push_error(lua_State *L, const char* msg)
 
 static int push_last_error(lua_State *L)
 {
+#ifdef _WIN32
 	char err[256];
 	int strLen = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL,
@@ -34,6 +35,9 @@ static int push_last_error(lua_State *L)
 	);
 	err[strLen - 2] = '\0'; // strip the \r\n
 	return push_error(L, err);
+#else
+	return push_error(L, strerror(GetLastError()));
+#endif
 }
 
 #define MPQ_T "storm.mpq"
@@ -59,7 +63,7 @@ static mpq_t* check_mpq(lua_State *L, int index)
 static void mpq_init(mpq_t* mpq, HANDLE handle, const char* name)
 {
 	mpq->handle = handle;
-	strncpy_s(mpq->name, sizeof(mpq->name), name, strlen(name));
+	strcpy(mpq->name, name);
 }
 
 static int mpq_read(lua_State *L)
@@ -133,7 +137,7 @@ static int mpq_extract(lua_State *L)
 	if (!SFileExtractFile(mpq->handle, filenameToExtract, filenameOut, 0))
 		return push_last_error(L);
 
-	lua_pushboolean(L, TRUE);
+	lua_pushboolean(L, 1);
 	return 1;
 }
 
@@ -164,7 +168,11 @@ static void register_mpq(lua_State *L)
 static int luastorm_open(lua_State *L)
 {
 	HANDLE hMpq;
-	const char* filename = luaL_checkstring(L, 1);
+	size_t len;
+	const char* filename = luaL_checklstring(L, 1, &len);
+
+	if (len >= MAX_PATH)
+		return push_error(L, "path too long");
 
 	if (!SFileOpenArchive(filename, 0, MPQ_OPEN_READ_ONLY, &hMpq))
 		return push_last_error(L);
